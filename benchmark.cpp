@@ -11,14 +11,13 @@
 using namespace bundle;
 
 auto main() -> int {
+  std::string str{std::istreambuf_iterator<char>{std::cin},
+                  std::istreambuf_iterator<char>{}};
+  // TODO: figure out a better way to construct a bundle::string.
   bundle::string buffer;
-  {
-    std::string str{std::istreambuf_iterator<char>{std::cin},
-                    std::istreambuf_iterator<char>{}};
-    buffer = str; // no better way to construct a bundle::string?
-  }
-  std::vector<unsigned> libs{RAW, LZ4, LZ4HC, SHOCO, MINIZ, LZMA20, LZIP, LZMA25,
-                             BROTLI9, BROTLI11, ZSTD, BSC};
+  buffer = std::move(str);
+  std::vector<unsigned> libs{RAW, LZ4, LZ4HC, SHOCO, MINIZ, LZMA20, LZIP,
+                             LZMA25, BROTLI9, BROTLI11, ZSTD, BSC};
   std::cout << "algorithm\traw\tpacked\tunpacked\tcompression\tdecompression\n";
   for (auto& use : libs) {
     auto pack_start = std::chrono::high_resolution_clock::now();
