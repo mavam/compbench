@@ -1,0 +1,3 @@
+[submodule "bundle"]
+	path = bundle
+	url = https://github.com/r-lyeh/bundle

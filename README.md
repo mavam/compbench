@@ -2,7 +2,7 @@ A benchmark utility to examine and compare various compression algorithms.
 
 ### Usage
 
-Build with `make` and the run as follows:
+Clone with `--recursive` and build with `make`. Then run as follows:
 
     ./benchmark < input > log
 
