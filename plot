@@ -93,7 +93,7 @@ options(scipen=1e6)
 
 data <- ingest(file("stdin"))
 dump <- function(filename, plot) { ggsave(filename, plot, height=10, width=10) }
-dump("screenshots/tradeoff.png", plot.tradeoff(data))
-dump("screenshots/throughput-scatter.png", plot.throughput.scatter(data))
-dump("screenshots/throughput-bars.png", plot.throughput.bars(data))
-dump("screenshots/compression-ratio.png", plot.ratio(data))
+dump("tradeoff.png", plot.tradeoff(data))
+dump("throughput-scatter.png", plot.throughput.scatter(data))
+dump("throughput-bars.png", plot.throughput.bars(data))
+dump("compression-ratio.png", plot.ratio(data))
