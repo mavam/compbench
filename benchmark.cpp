@@ -33,11 +33,14 @@ auto main() -> int {
     auto unpack_start = std::chrono::high_resolution_clock::now();
     auto unpacked = unpack(packed);
     auto unpack_stop = std::chrono::high_resolution_clock::now();
-    std::cout << name_of(use) << '\t'
-              << buffer.size() << '\t'
-              << packed.size() << '\t'
-              << unpacked.size() << '\t'
-              << (pack_stop - pack_start).count() << '\t'
-              << (unpack_stop - unpack_start).count() << std::endl;
+    // Since some implementations can fail (SHOCO on binary input), we only
+    // report successful runs.
+    if (buffer == unpacked)
+      std::cout << name_of(use) << '\t'
+                << buffer.size() << '\t'
+                << packed.size() << '\t'
+                << unpacked.size() << '\t'
+                << (pack_stop - pack_start).count() << '\t'
+                << (unpack_stop - unpack_start).count() << std::endl;
   }
 }
