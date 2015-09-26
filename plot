@@ -80,10 +80,10 @@ plot.throughput.bars <- function(data) {
 
 plot.ratio <- function(data) {
   data %>%
+    mutate(Throughput=Throughput.Compression) %>%
     filter(Algorithm != "NONE") %>%
-    ggplot(aes(x=reorder(Algorithm, -Ratio), y=Ratio, fill=Algorithm)) +
-      geom_bar(stat="identity") +
-      guides(fill=FALSE) +
+    ggplot(aes(x=reorder(Algorithm, -Ratio), y=Ratio)) +
+      geom_bar(aes(fill=Throughput), stat="identity") +
       labs(x="Algorithm", y="Compression Ratio") +
       theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5))
 }
@@ -91,7 +91,6 @@ plot.ratio <- function(data) {
 theme_set(theme_bw())
 options(scipen=1e6)
 
-data <- ingest("10K.log")
 data <- ingest(file("stdin"))
 dump <- function(filename, plot) { ggsave(filename, plot, height=10, width=10) }
 dump("screenshots/tradeoff.png", plot.tradeoff(data))
