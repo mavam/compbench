@@ -49,8 +49,8 @@ auto main() -> int {
 #endif
   std::string buffer{std::istreambuf_iterator<char>{std::cin},
                       std::istreambuf_iterator<char>{}};
-  std::vector<unsigned> libs{RAW, LZ4, LZ4HC, SHOCO, MINIZ, LZMA20, LZIP,
-                             LZMA25, BROTLI9, BROTLI11, ZSTD, BSC};
+  std::vector<unsigned> libs{RAW, SHOCO, LZ4, MINIZ, LZIP, LZMA20, ZPAQ, LZ4HC,
+                             BROTLI9, ZSTD, LZMA25, BSC, BROTLI11};
   std::cout << "algorithm\traw\tpacked\tunpacked\tcompression\tdecompression\n";
   for (auto& use : libs) {
     auto pack_start = std::chrono::high_resolution_clock::now();
