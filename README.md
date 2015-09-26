@@ -22,3 +22,6 @@ The following examples shows an invocation for a 10,000 packet PCAP trace:
 ![Compression Ratio](screenshots/compression-ratio.png)
 ![Throughput Scatterplot](screenshots/throughput-scatter.png)
 ![Throughput Barplot](screenshots/throughput-bars.png)
+
+The above plots come with a [Creative Commons Attribution 4.0 International
+License](http://creativecommons.org/licenses/by/4.0/).
