@@ -52,8 +52,10 @@ auto main() -> int {
   std::vector<unsigned> libs{RAW, SHOCO, LZ4F, MINIZ, LZIP, LZMA20, ZPAQ, LZ4,
                              BROTLI9, ZSTD, LZMA25, BSC, BROTLI11, SHRINKER,
                              CSC20};
-
-  std::cout << "algorithm\traw\tpacked\tunpacked\tcompression\tdecompression\n";
+  auto to_mus = [](std::chrono::high_resolution_clock::duration d) {
+    return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+  };
+  std::cout << "Algorithm\tRaw\tPacked\tUnpacked\tCompression\tDecompression\n";
   for (auto& use : libs) {
     auto pack_start = std::chrono::high_resolution_clock::now();
     auto packed = pack(use, buffer);
@@ -68,7 +70,7 @@ auto main() -> int {
                 << buffer.size() << '\t'
                 << packed.size() << '\t'
                 << unpacked.size() << '\t'
-                << (pack_stop - pack_start).count() << '\t'
-                << (unpack_stop - unpack_start).count() << std::endl;
+                << to_mus(pack_stop - pack_start) << '\t'
+                << to_mus(unpack_stop - unpack_start) << std::endl;
   }
 }

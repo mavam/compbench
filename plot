@@ -35,61 +35,66 @@ suppressMessages(library(scales))
 suppressMessages(library(tidyr))
 
 ingest <- function(filename) {
-  data <- read.table(filename, header=TRUE)
-  tbl_df(data)
+  read.table(filename, header=TRUE) %>%
+    mutate(Algorithm=factor(Algorithm), Ratio=Raw/Packed,
+           Savings=1-Packed/Raw,
+           Throughput.Compression=(Raw/2^20)/(Compression/1e6),
+           Throughput.Decompression=(Packed/2^20)/(Decompression/1e6))
 }
 
 plot.tradeoff <- function(data) {
   data %>%
-    mutate(Algorithm=factor(algorithm), Compression=packed/raw,
-           Speed=(compression+decompression)/1e6) %>%
-    ggplot(aes(x=Compression, y=Speed, color=Algorithm, shape=Algorithm)) +
-      geom_point(size=4) +
+    ggplot(aes(x=Savings, y=Throughput.Compression, color=Algorithm)) +
+      geom_point(aes(shape=Algorithm), size=4) +
       scale_shape_manual(values=1:nrow(data)) +
+      scale_x_continuous(labels=percent) +
       scale_y_log10(breaks=10^(0:10), labels=comma) +
-      labs(x="Compression", y="Speed (ms)") +
-      ggtitle("Compression vs. Speed")
+      labs(x="Space Savings", y="Throughput (MB/second)") +
+      ggtitle("Savings vs. Throughput")
+}
+
+plot.throughput.scatter <- function(data) {
+  data %>%
+    ggplot(aes(x=Throughput.Compression, y=Throughput.Decompression)) +
+      geom_point(aes(shape=Algorithm, color=Algorithm), size=4) +
+      geom_abline(slope=1, color="grey") +
+      scale_x_log10(breaks=10^(0:10), labels=comma) +
+      scale_y_log10(breaks=10^(0:10), labels=comma) +
+      scale_shape_manual(values=1:nrow(data)) +
+      labs(x="Compression (MB/sec)", y="Decompression (MB/sec)") +
+      ggtitle("Throughput")
+}
+
+plot.throughput.bars <- function(data) {
+  data %>%
+    mutate(Algorithm=reorder(Algorithm, -Throughput.Compression)) %>%
+    gather(key, value, Throughput.Compression, Throughput.Decompression) %>%
+    ggplot(aes(x=Algorithm, y=value*1e3, fill=key)) +
+      geom_bar(stat="identity", position="dodge") +
+      labs(x="Algorithm", y="Throughput (MB/sec)") +
+      scale_y_log10(breaks=10^(0:10), labels=function(x) comma(x/1e3)) +
+      scale_fill_discrete(name="", labels=c("Compression", "Decompression")) +
+      theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5),
+            legend.position="top")
 }
 
 plot.ratio <- function(data) {
   data %>%
-    mutate(Ratio=packed/raw) %>%
-    ggplot(aes(x=reorder(algorithm, Ratio), y=Ratio, fill=algorithm)) +
+    filter(Algorithm != "NONE") %>%
+    ggplot(aes(x=reorder(Algorithm, -Ratio), y=Ratio, fill=Algorithm)) +
       geom_bar(stat="identity") +
       guides(fill=FALSE) +
       labs(x="Algorithm", y="Compression Ratio") +
       theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5))
 }
 
-plot.speed.scatter <- function(data) {
-  ggplot(data, aes(x=compression/1e6, y=decompression/1e6,
-                   color=algorithm, shape=algorithm)) +
-    geom_point(size=4) +
-    scale_x_log10(breaks=10^(0:10), labels=comma) +
-    scale_y_log10(breaks=10^(0:10), labels=comma) +
-    scale_shape_manual(values=1:nrow(data)) +
-    labs(x="Compression (ms)", y="Decompression (ms)") +
-    ggtitle("Speed: Compression vs. Decompression")
-}
-
-plot.speed.bar <- function(data) {
-  data %>%
-    gather(key, value, compression, decompression) %>%
-    ggplot(aes(x=algorithm, y=value/1e3, fill=key)) +
-      geom_bar(stat="identity", position="dodge") +
-      labs(x="Algorithm", y="Speed (us)") +
-      scale_y_log10(breaks=10^(0:10), labels=comma) +
-      scale_fill_discrete(name="", labels=c("Compression", "Decompression")) +
-      theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5),
-            legend.position="top")
-}
-
 theme_set(theme_bw())
 options(scipen=1e6)
 
+data <- ingest("10K.log")
 data <- ingest(file("stdin"))
 dump <- function(filename, plot) { ggsave(filename, plot, height=10, width=10) }
-dump("tradeoff.png", plot.tradeoff(data))
-dump("speed-scatter.png", plot.speed.scatter(data))
-dump("speed-bar.png", plot.speed.bar(data))
-dump("ratio.png", plot.ratio(data))
+dump("screenshots/tradeoff.png", plot.tradeoff(data))
+dump("screenshots/throughput-scatter.png", plot.throughput.scatter(data))
+dump("screenshots/throughput-bars.png", plot.throughput.bars(data))
+dump("screenshots/compression-ratio.png", plot.ratio(data))

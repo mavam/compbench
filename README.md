@@ -18,7 +18,7 @@ You will find several plots in the current directory for your perusal.
 
 The following examples shows an invocation for a 10,000 packet PCAP trace:
 
-![Compression Ratio](screenshots/ratio.png)
-![Speed Scatterplot](screenshots/speed-scatter.png)
-![Speed Barplot](screenshots/speed-bar.png)
 ![Tradeoff](screenshots/tradeoff.png)
+![Compression Ratio](screenshots/compression-ratio.png)
+![Throughput Scatterplot](screenshots/throughput-scatter.png)
+![Throughput Barplot](screenshots/throughput-bars.png)
