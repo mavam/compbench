@@ -16,12 +16,28 @@ You will find several plots in the current directory for your perusal.
 
 ### Example
 
-The following examples shows an invocation for a 10,000 packet PCAP trace:
+The following examples shows an invocation for the 10,000 packets of a PCAP
+trace
+([2009-M57-day11-18](http://digitalcorpora.org/corpora/scenarios/m57-patents-scenario)):
 
-![Tradeoff](screenshots/tradeoff.png)
-![Compression Ratio](screenshots/compression-ratio.png)
-![Throughput Scatterplot](screenshots/throughput-scatter.png)
-![Throughput Barplot](screenshots/throughput-bars.png)
+![PCAP Tradeoff](screenshots/pcap-tradeoff.png)
+![PCAP Compression Ratio](screenshots/pcap-compression-ratio.png)
+![PCAP Throughput Scatterplot](screenshots/pcap-throughput-scatter.png)
+![PCAP Throughput Barplot](screenshots/pcap-throughput-bars.png)
+
+The next figures show the same plot types for ASCII [Bro](http://www.bro.org)
+logs generated from the above mentioned trace:
+
+![Bro Tradeoff](screenshots/bro-tradeoff.png)
+![Bro Compression Ratio](screenshots/bro-compression-ratio.png)
+![Bro Throughput Scatterplot](screenshots/bro-throughput-scatter.png)
+![Bro Throughput Barplot](screenshots/bro-throughput-bars.png)
+
+Note the presence of SHOCO (which only operates on ASCII data) in the bottom
+figures, albeit not very effective in terms of space savings.
+
+### License
 
 The above plots come with a [Creative Commons Attribution 4.0 International
-License](http://creativecommons.org/licenses/by/4.0/).
+License](http://creativecommons.org/licenses/by/4.0/), while the code ships
+with a 3-clause BSD license.
