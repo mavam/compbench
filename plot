@@ -88,11 +88,26 @@ plot.ratio <- function(data) {
       theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5))
 }
 
+# Parse command line argument.
+args <- commandArgs(TRUE)
+file_prefix <- ""
+if (length(args) > 0)
+  file_prefix <- paste0(args[1], "-")
+
+# Helper function to store plots on disk.
+dump <- function(filename, plot) {
+  filename <- paste0(file_prefix, filename)
+  message("saving ", filename)
+  ggsave(filename, plot, height=10, width=10)
+}
+
+# Adjust global plotting options.
 theme_set(theme_bw())
 options(scipen=1e6)
 
+# Read data from standard input.
 data <- ingest(file("stdin"))
-dump <- function(filename, plot) { ggsave(filename, plot, height=10, width=10) }
+
 dump("tradeoff.png", plot.tradeoff(data))
 dump("throughput-scatter.png", plot.throughput.scatter(data))
 dump("throughput-bars.png", plot.throughput.bars(data))

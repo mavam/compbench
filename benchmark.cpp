@@ -49,9 +49,11 @@ auto main() -> int {
 #endif
   std::string buffer{std::istreambuf_iterator<char>{std::cin},
                       std::istreambuf_iterator<char>{}};
-  std::vector<unsigned> libs{RAW, SHOCO, LZ4F, MINIZ, LZIP, LZMA20, ZPAQ, LZ4,
-                             BROTLI9, ZSTD, LZMA25, BSC, BROTLI11, SHRINKER,
-                             CSC20};
+  std::vector<unsigned> libs{
+    RAW, SHOCO, LZ4F, MINIZ, LZIP, LZMA20, ZPAQ,
+    LZ4, BROTLI9, ZSTD, LZMA25, BSC, BROTLI11, SHRINKER,
+    CSC20, ZSTDF, BCM, ZLING, MCM, TANGELO, ZMOLLY
+  };
   auto to_mus = [](std::chrono::high_resolution_clock::duration d) {
     return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
   };
