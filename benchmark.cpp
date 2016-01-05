@@ -27,6 +27,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <zlib.h>
+
 #include <chrono>
 #include <iterator>
 #include <iostream>
@@ -40,6 +42,11 @@
 #include "bundle/bundle.hpp"
 
 using namespace bundle;
+auto now = std::chrono::high_resolution_clock::now;
+
+auto to_mus = [](std::chrono::high_resolution_clock::duration d) {
+  return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+};
 
 auto main() -> int {
   // Force binary std::cin on a few platforms.
@@ -54,17 +61,14 @@ auto main() -> int {
     LZ4, BROTLI9, ZSTD, LZMA25, BSC, BROTLI11, SHRINKER,
     CSC20, ZSTDF, BCM, ZLING, MCM, TANGELO, ZMOLLY
   };
-  auto to_mus = [](std::chrono::high_resolution_clock::duration d) {
-    return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
-  };
   std::cout << "Algorithm\tRaw\tPacked\tUnpacked\tCompression\tDecompression\n";
   for (auto& use : libs) {
-    auto pack_start = std::chrono::high_resolution_clock::now();
+    auto pack_start = now();
     auto packed = pack(use, buffer);
-    auto pack_stop = std::chrono::high_resolution_clock::now();
-    auto unpack_start = std::chrono::high_resolution_clock::now();
+    auto pack_stop = now();
+    auto unpack_start = now();
     auto unpacked = unpack(packed);
-    auto unpack_stop = std::chrono::high_resolution_clock::now();
+    auto unpack_stop = now();
     // Since some implementations can fail (SHOCO on binary input), we only
     // report successful runs.
     if (buffer == unpacked)
@@ -74,5 +78,38 @@ auto main() -> int {
                 << unpacked.size() << '\t'
                 << to_mus(pack_stop - pack_start) << '\t'
                 << to_mus(unpack_stop - unpack_start) << std::endl;
+  }
+  // DEFLATE
+  for (auto level : {1, 6, 9}) {
+    auto pack_start = now();
+    std::string packed;
+    packed.resize(compressBound(buffer.size()));
+    uLongf packed_size = packed.size();
+    auto result = compress2(
+      reinterpret_cast<Bytef*>(&packed[0]), &packed_size,
+      reinterpret_cast<Bytef const*>(buffer.data()), buffer.size(), level);
+    auto pack_stop = now();
+    if (result != Z_OK) {
+      std::cerr << "zlib compress2() failed (" << result << ')' << std::endl;
+      return 1;
+    }
+    auto unpack_start = now();
+    std::string unpacked;
+    unpacked.resize(buffer.size());
+    uLongf unpacked_size = unpacked.size();
+    result = uncompress(
+      reinterpret_cast<Bytef*>(&unpacked[0]), &unpacked_size,
+      reinterpret_cast<Bytef const*>(packed.data()), packed_size);
+    auto unpack_stop = now();
+    if (result != Z_OK) {
+      std::cerr << "zlib uncompress() failed (" << result << ')' << std::endl;
+      return 1;
+    }
+    std::cout << "DEFLATE" << level << '\t'
+              << buffer.size() << '\t'
+              << packed_size << '\t'
+              << unpacked_size << '\t'
+              << to_mus(pack_stop - pack_start) << '\t'
+              << to_mus(unpack_stop - unpack_start) << std::endl;
   }
 }
