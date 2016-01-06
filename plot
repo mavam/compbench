@@ -67,7 +67,6 @@ plot.throughput.scatter <- function(data) {
 
 plot.throughput.bars <- function(data) {
   data %>%
-    mutate(Algorithm=reorder(Algorithm, -Throughput.Compression)) %>%
     gather(key, value, Throughput.Compression, Throughput.Decompression) %>%
     ggplot(aes(x=Algorithm, y=value*1e3, fill=key)) +
       geom_bar(stat="identity", position="dodge") +
@@ -78,25 +77,56 @@ plot.throughput.bars <- function(data) {
             legend.position="top")
 }
 
+plot.throughput.bars.comp <- function(data) {
+  sorted <- data %>%
+      mutate(Algorithm=reorder(Algorithm, -Throughput.Compression))
+  plot.throughput.bars(sorted)
+}
+
+plot.throughput.bars.decomp <- function(data) {
+  sorted <- data %>%
+      mutate(Algorithm=reorder(Algorithm, -Throughput.Decompression))
+  plot.throughput.bars(sorted)
+}
+
+plot.throughput.bars.ratio <- function(data) {
+  sorted <- data %>%
+      mutate(Algorithm=reorder(Algorithm, -Ratio))
+  plot.throughput.bars(sorted)
+}
+
 plot.ratio <- function(data) {
   data %>%
-    mutate(Throughput=Throughput.Compression) %>%
-    filter(Algorithm != "NONE") %>%
     ggplot(aes(x=reorder(Algorithm, -Ratio), y=Ratio)) +
       geom_bar(aes(fill=Throughput), stat="identity") +
       labs(x="Algorithm", y="Compression Ratio") +
+      scale_fill_gradient(name="Throughput\n    (MB/s)",
+                          labels=function(x) { 10^x },
+                          low="red3", high="green3") +
       theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5))
+}
+
+plot.ratio.comp <- function(data) {
+  plot.ratio(data %>% mutate(Throughput=log10(Throughput.Compression)))
+}
+
+plot.ratio.decomp <- function(data) {
+  plot.ratio(data %>% mutate(Throughput=log10(Throughput.Decompression)))
 }
 
 # Parse command line argument.
 args <- commandArgs(TRUE)
 file_prefix <- ""
-if (length(args) > 0)
+extension <- "png"
+if (length(args) > 0) {
   file_prefix <- paste0(args[1], "-")
+  if (length(args) > 1)
+    extension <- args[2]
+}
 
 # Helper function to store plots on disk.
 dump <- function(filename, plot) {
-  filename <- paste0(file_prefix, filename)
+  filename <- paste0(file_prefix, filename, ".", extension)
   message("saving ", filename)
   ggsave(filename, plot, height=10, width=10)
 }
@@ -108,7 +138,10 @@ options(scipen=1e6)
 # Read data from standard input.
 data <- ingest(file("stdin"))
 
-dump("tradeoff.png", plot.tradeoff(data))
-dump("throughput-scatter.png", plot.throughput.scatter(data))
-dump("throughput-bars.png", plot.throughput.bars(data))
-dump("compression-ratio.png", plot.ratio(data))
+dump("tradeoff", plot.tradeoff(data))
+dump("throughput-scatter", plot.throughput.scatter(data))
+dump("throughput-bars-comp", plot.throughput.bars.comp(data))
+dump("throughput-bars-decomp", plot.throughput.bars.decomp(data))
+dump("throughput-bars-ratio", plot.throughput.bars.ratio(data))
+dump("compression-ratio-comp", plot.ratio.comp(data))
+dump("compression-ratio-decomp", plot.ratio.decomp(data))
