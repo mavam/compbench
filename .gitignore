@@ -1,0 +1,5 @@
+.DS_Store
+.*sw[op]
+benchmark
+bundle.o
+*.log
