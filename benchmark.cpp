@@ -27,6 +27,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <bzlib.h>
 #include <zlib.h>
 
 #include <chrono>
@@ -48,6 +49,10 @@ struct algorithm;
 // The DEFLATE algorithm.
 template <unsigned Algorithm>
 struct gzip { };
+
+// The BZIP2 algorithm.
+template <int Level>
+struct bzip2 { };
 
 // An algorithm from bundle.
 template <int Level>
@@ -116,6 +121,35 @@ struct algorithm<gzip<Level>> {
   }
 };
 
+// Specialization for bzlib.
+template <int Level>
+struct algorithm<bzip2<Level>> {
+  static std::string name() {
+    return "BZIP2:" + std::to_string(Level);
+  }
+
+  template <class Input, class Output>
+  static size_t compress(Input const& in, Output& out) {
+    out.resize(static_cast<size_t>(in.size() * 1.1) + 600);
+    unsigned out_size = out.size();
+    auto result = BZ2_bzBuffToBuffCompress(
+      &out[0], &out_size, const_cast<char*>(&in[0]), in.size(), Level, 0, 30);
+    if (result != BZ_OK)
+      throw std::runtime_error{"bzip2 compression failed"};
+    return out_size;
+  }
+
+  template <class Input, class Output>
+  static size_t uncompress(Input const& in, Output& out) {
+    unsigned out_size = out.size();
+    auto result = BZ2_bzBuffToBuffDecompress(
+      &out[0], &out_size, const_cast<char*>(&in[0]), in.size(), 0, 0);
+    if (result != BZ_OK)
+      throw std::runtime_error{"bzip2 uncompression failed"};
+    return out_size;
+  }
+};
+
 template <class Algorithm, class Buffer>
 void run(Buffer const& buffer) {
   using clock = std::chrono::high_resolution_clock;
@@ -175,4 +209,7 @@ auto main() -> int {
   // Run gzip.
   run<algorithm<gzip<1>>>(buffer);
   run<algorithm<gzip<9>>>(buffer);
+  // Run bzip2.
+  run<algorithm<bzip2<1>>>(buffer);
+  run<algorithm<bzip2<9>>>(buffer);
 }
