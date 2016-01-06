@@ -41,12 +41,105 @@
 
 #include "bundle/bundle.hpp"
 
-using namespace bundle;
-auto now = std::chrono::high_resolution_clock::now;
+// Abstracts an algorithm with compression and decompression functionality.
+template <class Algorithm>
+struct algorithm;
 
-auto to_mus = [](std::chrono::high_resolution_clock::duration d) {
-  return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+// The DEFLATE algorithm.
+template <unsigned Algorithm>
+struct gzip { };
+
+// An algorithm from bundle.
+template <int Level>
+struct other { };
+
+// Specialization for bundle.
+template <unsigned Algorithm>
+struct algorithm<other<Algorithm>> {
+  static std::string name() {
+    return bundle::name_of(Algorithm);
+  }
+
+  template <class Input, class Output>
+  static size_t compress(Input const& in, Output& out) {
+    out.resize(bundle::bound(Algorithm, in.size()));
+    auto out_size = out.size();
+    auto result = bundle::pack(Algorithm, &in[0], in.size(), &out[0], out_size);
+    // There's an issue with bundle's notion of successful packing. The
+    // function pack() returns true iff the output is strictly smaller than the
+    // input. This is obviously not true for RAW, which is why we exclude it.
+    if (Algorithm == bundle::RAW)
+      return in.size();
+    if (!result)
+      throw std::runtime_error{"bundle compression failed"};
+    return out_size;
+  }
+
+  template <class Input, class Output>
+  static size_t uncompress(Input const& in, Output& out) {
+    size_t out_size = out.size();
+    if (!bundle::unpack(Algorithm, &in[0], in.size(), &out[0], out_size))
+      throw std::runtime_error{"bundle decompression failed"};
+    return out_size;
+  }
 };
+
+// Specialization for zlib.
+template <int Level>
+struct algorithm<gzip<Level>> {
+  static std::string name() {
+    return "DEFLATE:" + std::to_string(Level);
+  }
+
+  template <class Input, class Output>
+  static size_t compress(Input const& in, Output& out) {
+    out.resize(compressBound(in.size()));
+    uLongf out_size = out.size();
+    auto result = compress2(
+      reinterpret_cast<Bytef*>(&out[0]), &out_size,
+      reinterpret_cast<Bytef const*>(in.data()), in.size(), Level);
+    if (result != Z_OK)
+      throw std::runtime_error{"zlib compression failed"};
+    return out_size;
+  }
+
+  template <class Input, class Output>
+  static size_t uncompress(Input const& in, Output& out) {
+    using ::uncompress;
+    uLongf out_size = out.size();
+    auto result = uncompress(
+      reinterpret_cast<Bytef*>(&out[0]), &out_size,
+      reinterpret_cast<Bytef const*>(in.data()), in.size());
+    if (result != Z_OK)
+      throw std::runtime_error{"zlib uncompression failed"};
+    return out_size;
+  }
+};
+
+template <class Algorithm, class Buffer>
+void run(Buffer const& buffer) {
+  using clock = std::chrono::high_resolution_clock;
+  auto to_mus = [](std::chrono::high_resolution_clock::duration d) {
+    return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+  };
+  Buffer packed;
+  packed.resize(buffer.size() * 2); // avoid hitting the allocator later
+  auto pack_start = clock::now();
+  auto packed_size = Algorithm::compress(buffer, packed);
+  auto pack_stop = clock::now();
+  packed.resize(packed_size);
+  Buffer unpacked;
+  unpacked.resize(buffer.size());
+  auto unpack_start = clock::now();
+  auto unpacked_size = Algorithm::uncompress(packed, unpacked);
+  auto unpack_stop = clock::now();
+  std::cout << Algorithm::name() << '\t'
+            << buffer.size() << '\t'
+            << packed_size << '\t'
+            << unpacked_size << '\t'
+            << to_mus(pack_stop - pack_start) << '\t'
+            << to_mus(unpack_stop - unpack_start) << std::endl;
+}
 
 auto main() -> int {
   // Force binary std::cin on a few platforms.
@@ -56,60 +149,30 @@ auto main() -> int {
 #endif
   std::string buffer{std::istreambuf_iterator<char>{std::cin},
                       std::istreambuf_iterator<char>{}};
-  std::vector<unsigned> libs{
-    RAW, SHOCO, LZ4F, MINIZ, LZIP, LZMA20, ZPAQ,
-    LZ4, BROTLI9, ZSTD, LZMA25, BSC, BROTLI11, SHRINKER,
-    CSC20, ZSTDF, BCM, ZLING, MCM, TANGELO, ZMOLLY
-  };
   std::cout << "Algorithm\tRaw\tPacked\tUnpacked\tCompression\tDecompression\n";
-  for (auto& use : libs) {
-    auto pack_start = now();
-    auto packed = pack(use, buffer);
-    auto pack_stop = now();
-    auto unpack_start = now();
-    auto unpacked = unpack(packed);
-    auto unpack_stop = now();
-    // Since some implementations can fail (SHOCO on binary input), we only
-    // report successful runs.
-    if (buffer == unpacked)
-      std::cout << name_of(use) << '\t'
-                << buffer.size() << '\t'
-                << packed.size() << '\t'
-                << unpacked.size() << '\t'
-                << to_mus(pack_stop - pack_start) << '\t'
-                << to_mus(unpack_stop - unpack_start) << std::endl;
-  }
-  // DEFLATE
-  for (auto level : {1, 6, 9}) {
-    auto pack_start = now();
-    std::string packed;
-    packed.resize(compressBound(buffer.size()));
-    uLongf packed_size = packed.size();
-    auto result = compress2(
-      reinterpret_cast<Bytef*>(&packed[0]), &packed_size,
-      reinterpret_cast<Bytef const*>(buffer.data()), buffer.size(), level);
-    auto pack_stop = now();
-    if (result != Z_OK) {
-      std::cerr << "zlib compress2() failed (" << result << ')' << std::endl;
-      return 1;
-    }
-    auto unpack_start = now();
-    std::string unpacked;
-    unpacked.resize(buffer.size());
-    uLongf unpacked_size = unpacked.size();
-    result = uncompress(
-      reinterpret_cast<Bytef*>(&unpacked[0]), &unpacked_size,
-      reinterpret_cast<Bytef const*>(packed.data()), packed_size);
-    auto unpack_stop = now();
-    if (result != Z_OK) {
-      std::cerr << "zlib uncompress() failed (" << result << ')' << std::endl;
-      return 1;
-    }
-    std::cout << "DEFLATE" << level << '\t'
-              << buffer.size() << '\t'
-              << packed_size << '\t'
-              << unpacked_size << '\t'
-              << to_mus(pack_stop - pack_start) << '\t'
-              << to_mus(unpack_stop - unpack_start) << std::endl;
-  }
+  // Run all bundle algorithms except for SHOCO, which only works with ASCII
+  // data.
+  run<algorithm<other<bundle::RAW>>>(buffer);
+  run<algorithm<other<bundle::LZ4F>>>(buffer);
+  run<algorithm<other<bundle::MINIZ>>>(buffer);
+  run<algorithm<other<bundle::LZIP>>>(buffer);
+  run<algorithm<other<bundle::LZMA20>>>(buffer);
+  run<algorithm<other<bundle::ZPAQ>>>(buffer);
+  run<algorithm<other<bundle::LZ4>>>(buffer);
+  run<algorithm<other<bundle::BROTLI9>>>(buffer);
+  run<algorithm<other<bundle::ZSTD>>>(buffer);
+  run<algorithm<other<bundle::LZMA25>>>(buffer);
+  run<algorithm<other<bundle::BSC>>>(buffer);
+  run<algorithm<other<bundle::BROTLI11>>>(buffer);
+  run<algorithm<other<bundle::SHRINKER>>>(buffer);
+  run<algorithm<other<bundle::CSC20>>>(buffer);
+  run<algorithm<other<bundle::ZSTDF>>>(buffer);
+  run<algorithm<other<bundle::BCM>>>(buffer);
+  run<algorithm<other<bundle::ZLING>>>(buffer);
+  run<algorithm<other<bundle::MCM>>>(buffer);
+  run<algorithm<other<bundle::TANGELO>>>(buffer);
+  run<algorithm<other<bundle::ZMOLLY>>>(buffer);
+  // Run gzip.
+  run<algorithm<gzip<1>>>(buffer);
+  run<algorithm<gzip<9>>>(buffer);
 }

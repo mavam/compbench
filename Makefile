@@ -1,9 +1,15 @@
-BENCH = benchmark
+BENCHMARK = benchmark
+
+FLAGS = -std=c++11 -stdlib=libc++ -O3 -Wall
+LIBS = -lz -lbz2
 
 all: bench pcap-bench bro-bench pcap-plots bro-plots
 
-bench: benchmark.cpp
-	c++ -std=c++11 -stdlib=libc++ -O3 -Wall -o $(BENCH) $< bundle/bundle.cpp -lz
+bundle.o: bundle/bundle.cpp
+	c++ $(FLAGS) -c $< -o bundle.o
+
+bench: benchmark.cpp bundle.o
+	c++ $(FLAGS) -o $(BENCHMARK) bundle.o $< $(LIBS)
 
 pcap-bench:
 	./benchmark < data/pcap/2009-M57-day11-18-10k.pcap > pcap.log
@@ -18,6 +24,6 @@ bro-plots: bro.log
 	cd screenshots; ../plot bro < ../bro.log
 
 clean:
-	rm -f $(BENCH) pcap.log bro.log
+	rm -f $(BENCHMARK) bundle.o pcap.log bro.log
 
 .PHONY: bench pcap-bench pcap-plots bro-bench bro-plots clean
