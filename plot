@@ -50,8 +50,7 @@ plot.tradeoff <- function(data) {
       scale_shape_manual(values=1:nrow(data)) +
       scale_x_continuous(labels=percent) +
       scale_y_log10(breaks=10^(0:10), labels=comma) +
-      labs(x="Space Savings", y="Throughput (MB/second)") +
-      ggtitle("Savings vs. Throughput")
+      labs(x="Space Savings", y="Decompression (MB/second)")
 }
 
 plot.throughput.scatter <- function(data) {
@@ -62,8 +61,7 @@ plot.throughput.scatter <- function(data) {
       scale_x_log10(breaks=10^(0:10), labels=comma) +
       scale_y_log10(breaks=10^(0:10), labels=comma) +
       scale_shape_manual(values=1:nrow(data)) +
-      labs(x="Compression (MB/sec)", y="Decompression (MB/sec)") +
-      ggtitle("Throughput")
+      labs(x="Compression (MB/sec)", y="Decompression (MB/sec)")
 }
 
 plot.throughput.bars <- function(data) {
@@ -73,7 +71,8 @@ plot.throughput.bars <- function(data) {
       geom_bar(stat="identity", position="dodge") +
       labs(x="Algorithm", y="Throughput (MB/sec)") +
       scale_y_log10(breaks=10^(0:10), labels=function(x) comma(x/1e3)) +
-      scale_fill_discrete(name="", labels=c("Compression", "Decompression")) +
+      scale_fill_manual(name="", labels=c("Compression", "Decompression"),
+                        values=c("steelblue4", "steelblue1")) +
       theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5),
             legend.position="top")
 }
@@ -103,7 +102,7 @@ plot.ratio <- function(data) {
       labs(x="Algorithm", y="Compression Ratio") +
       scale_fill_gradient(name="Throughput\n    (MB/s)",
                           labels=function(x) { 10^x },
-                          low="red3", high="green3") +
+                          low="black", high="steelblue1") +
       theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5))
 }
 
