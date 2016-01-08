@@ -44,7 +44,8 @@ ingest <- function(filename) {
 
 plot.tradeoff <- function(data) {
   data %>%
-    ggplot(aes(x=Savings, y=Throughput.Compression, color=Algorithm)) +
+    filter(Algorithm != "RAW") %>%
+    ggplot(aes(x=Savings, y=Throughput.Decompression, color=Algorithm)) +
       geom_point(aes(shape=Algorithm), size=4) +
       scale_shape_manual(values=1:nrow(data)) +
       scale_x_continuous(labels=percent) +
