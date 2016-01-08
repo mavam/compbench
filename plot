@@ -138,10 +138,23 @@ options(scipen=1e6)
 # Read data from standard input.
 data <- ingest(file("stdin"))
 
-dump("tradeoff", plot.tradeoff(data))
-dump("throughput-scatter", plot.throughput.scatter(data))
-dump("throughput-bars-comp", plot.throughput.bars.comp(data))
-dump("throughput-bars-decomp", plot.throughput.bars.decomp(data))
-dump("throughput-bars-ratio", plot.throughput.bars.ratio(data))
-dump("compression-ratio-comp", plot.ratio.comp(data))
-dump("compression-ratio-decomp", plot.ratio.decomp(data))
+if (extension == "xtable") {
+  suppressMessages(library(xtable))
+  x <- data %>%
+    select(Compression=Throughput.Compression,
+           Decompression=Throughput.Decompression,
+           Savings) %>%
+    round(2) %>%
+    xtable(align=c("l", "c", "c", "c"))
+  filename <- paste0(file_prefix, "table.tex")
+  print(x, file=filename, hline.after=NULL, table.placement=NULL,
+        comment=FALSE)
+} else {
+  dump("tradeoff", plot.tradeoff(data))
+  dump("throughput-scatter", plot.throughput.scatter(data))
+  dump("throughput-bars-comp", plot.throughput.bars.comp(data))
+  dump("throughput-bars-decomp", plot.throughput.bars.decomp(data))
+  dump("throughput-bars-ratio", plot.throughput.bars.ratio(data))
+  dump("compression-ratio-comp", plot.ratio.comp(data))
+  dump("compression-ratio-decomp", plot.ratio.decomp(data))
+}
