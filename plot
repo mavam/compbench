@@ -42,15 +42,26 @@ ingest <- function(filename) {
            Throughput.Decompression=(Packed/2^20)/(Decompression/1e6))
 }
 
-plot.tradeoff <- function(data) {
+plot.tradeoff <- function(plot) {
+  plot +
+    geom_point(aes(shape=Algorithm), size=4) +
+    scale_shape_manual(values=1:nrow(data)) +
+    scale_x_continuous(labels=percent) +
+    scale_y_log10(breaks=10^(0:10), labels=comma)
+}
+
+plot.tradeoff.comp <- function(data) {
   data %>%
     filter(Algorithm != "RAW") %>%
-    ggplot(aes(x=Savings, y=Throughput.Decompression, color=Algorithm)) +
-      geom_point(aes(shape=Algorithm), size=4) +
-      scale_shape_manual(values=1:nrow(data)) +
-      scale_x_continuous(labels=percent) +
-      scale_y_log10(breaks=10^(0:10), labels=comma) +
-      labs(x="Space Savings", y="Decompression (MB/second)")
+    ggplot(aes(x=Savings, y=Throughput.Compression, color=Algorithm)) %>%
+    plot.tradeoff() + labs(x="Space Savings", y="Compression (MB/second)")
+}
+
+plot.tradeoff.decomp <- function(data) {
+  data %>%
+    filter(Algorithm != "RAW") %>%
+    ggplot(aes(x=Savings, y=Throughput.Decompression, color=Algorithm)) %>%
+    plot.tradeoff() + labs(x="Space Savings", y="Decompression (MB/second)")
 }
 
 plot.throughput.scatter <- function(data) {
@@ -78,21 +89,21 @@ plot.throughput.bars <- function(data) {
 }
 
 plot.throughput.bars.comp <- function(data) {
-  sorted <- data %>%
-      mutate(Algorithm=reorder(Algorithm, -Throughput.Compression))
-  plot.throughput.bars(sorted)
+  data %>%
+    mutate(Algorithm=reorder(Algorithm, -Throughput.Compression)) %>%
+    plot.throughput.bars()
 }
 
 plot.throughput.bars.decomp <- function(data) {
-  sorted <- data %>%
-      mutate(Algorithm=reorder(Algorithm, -Throughput.Decompression))
-  plot.throughput.bars(sorted)
+  data %>%
+    mutate(Algorithm=reorder(Algorithm, -Throughput.Decompression)) %>%
+    plot.throughput.bars()
 }
 
 plot.throughput.bars.ratio <- function(data) {
-  sorted <- data %>%
-      mutate(Algorithm=reorder(Algorithm, -Ratio))
-  plot.throughput.bars(sorted)
+  data %>%
+    mutate(Algorithm=reorder(Algorithm, -Ratio)) %>%
+    plot.throughput.bars()
 }
 
 plot.ratio <- function(data) {
@@ -107,11 +118,11 @@ plot.ratio <- function(data) {
 }
 
 plot.ratio.comp <- function(data) {
-  plot.ratio(data %>% mutate(Throughput=log10(Throughput.Compression)))
+  data %>% mutate(Throughput=log10(Throughput.Compression)) %>% plot.ratio()
 }
 
 plot.ratio.decomp <- function(data) {
-  plot.ratio(data %>% mutate(Throughput=log10(Throughput.Decompression)))
+  data %>% mutate(Throughput=log10(Throughput.Decompression)) %>% plot.ratio()
 }
 
 # Parse command line argument.
@@ -150,7 +161,8 @@ if (extension == "xtable") {
   print(x, file=filename, hline.after=NULL, table.placement=NULL,
         comment=FALSE)
 } else {
-  dump("tradeoff", plot.tradeoff(data))
+  dump("tradeoff-comp", plot.tradeoff.comp(data))
+  dump("tradeoff-decomp", plot.tradeoff.decomp(data))
   dump("throughput-scatter", plot.throughput.scatter(data))
   dump("throughput-bars-comp", plot.throughput.bars.comp(data))
   dump("throughput-bars-decomp", plot.throughput.bars.decomp(data))
