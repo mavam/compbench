@@ -15,17 +15,28 @@ Thereafter, generate the plots:
 You will find several plots in the current directory for your perusal. The
 optional argument `prefix` sets a file prefix and `format` defaults to `png`.
 
-### Example
+### Examples
 
-The following examples shows an invocation for the 10,000 packets of a PCAP
-trace
-([2009-M57-day11-18](http://digitalcorpora.org/corpora/scenarios/m57-patents-scenario)):
+To illustrate, we use a 850 MB PCAP trace ([2009-M57-day11-18][M57]), plus a
+derived 5.3 MB of [Bro](https://www.bro.org) ASCII logs. The trace consists of
+8505 connections from standard protocols, such as DNS, HTTP, DHCP, SSL, SMTP,
+and FTP. We conducted our experiments on a 64-bit FreeBSD system with two
+8-core CPUs and 128 GB of RAM. To reproduce the input data, download the trace
+and run Bro on it as follows:
 
-![PCAP Tradeoff](screenshots/pcap-tradeoff.png)
+    bro -r trace.pcap
 
-The above plot shows the trade-off space between space savings and throughput
-(decompression in MB/sec). The further a point lays in the top-right corner the
-better it performs across both dimensions.
+Thereafter, typing `make` generates in the `screenshots` directory the plots
+below.
+
+#### PCAP input
+
+![PCAP Tradeoff](screenshots/pcap-tradeoff-comp.png)
+![PCAP Tradeoff](screenshots/pcap-tradeoff-decomp.png)
+
+The above plots shows the trade-off space between space savings and
+compression, as well as space savings versus decompression. The further a point
+lays in the top-right corner the better it performs across both dimensions.
 
 ![PCAP Compression Ratio](screenshots/pcap-compression-ratio-decomp.png)
 
@@ -49,11 +60,14 @@ The above plot shows the same information as the previous plot, but also
 includes the compression ratio in that the left-most algorithm exhibits the
 highest compression ratio.
 
-The next figures show the same plot types for ASCII [Bro](http://www.bro.org)
-logs generated from the above mentioned trace:
+#### Bro input
 
-![Bro Tradeoff](screenshots/bro-tradeoff.png)
-![Bro Compression Ratio](screenshots/bro-compression-ratio-ratio.png)
+The next figures show the same plot types for Bro ASCII logs generated from the
+above trace:
+
+![Bro Tradeoff](screenshots/bro-tradeoff-comp.png)
+![Bro Tradeoff](screenshots/bro-tradeoff-decomp.png)
+![Bro Compression Ratio](screenshots/bro-compression-ratio-decomp.png)
 ![Bro Throughput Scatterplot](screenshots/bro-throughput-scatter.png)
 ![Bro Throughput Barplot](screenshots/bro-throughput-bars-decomp.png)
 
@@ -62,3 +76,5 @@ logs generated from the above mentioned trace:
 The above plots come with a [Creative Commons Attribution 4.0 International
 License](http://creativecommons.org/licenses/by/4.0/), while the code ships
 with a 3-clause BSD license.
+
+[M57]: http://digitalcorpora.org/corpora/scenarios/m57-patents-scenario
