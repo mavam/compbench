@@ -40,10 +40,10 @@ lays in the top-right corner the better it performs across both dimensions.
 
 ![PCAP Compression Ratio](screenshots/pcap-compression-ratio-decomp.png)
 
-The above plot ranks the compression algorithms with respect to their
-compression ratio. The algorithm with the highst compression ratio appears on
-the left. The coloring corresponds to the decompression throughput in MB/sec,
-highlighting in green those algorithms with fast decompression.
+The above plot ranks the algorithms with respect to their compression ratio.
+The algorithm with the highest compression ratio appears on the left. The
+coloring corresponds to the decompression throughput in MB/sec and uses
+light blue to highlight those algorithms with fast decompression.
 
 ![PCAP Throughput Scatterplot](screenshots/pcap-throughput-scatter.png)
 
