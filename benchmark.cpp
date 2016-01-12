@@ -206,6 +206,8 @@ auto main() -> int {
   run<algorithm<other<bundle::MCM>>>(buffer);
   run<algorithm<other<bundle::TANGELO>>>(buffer);
   run<algorithm<other<bundle::ZMOLLY>>>(buffer);
+  run<algorithm<other<bundle::CRUSH>>>(buffer);
+  run<algorithm<other<bundle::LZJB>>>(buffer);
   // Run gzip.
   run<algorithm<gzip<1>>>(buffer);
   run<algorithm<gzip<9>>>(buffer);
